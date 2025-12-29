@@ -373,21 +373,29 @@ int VMCParaOpt(MPI_Comm comm_parent, MPI_Comm comm_child1, MPI_Comm comm_child2)
 #pragma omp parallel for default(shared) private(tmp_i)
       for(tmp_i=0;tmp_i<NQPFull*(Nsize*Nsize+1);tmp_i++)     InvM_real[tmp_i]= creal(InvM[tmp_i]);
       StopTimer(69);
-      if(iFlgOrbitalGeneral==0){ // Orbital
-        if(NProjBF ==0){
-          // SlaterElm_real will be used in CalculateMAll, note that SlaterElm will not change before SR
-          VMCMakeSample_real(comm_child1);
-        }else{
-          VMC_BF_MakeSample_real(comm_child1);
+      if(FlagExactSmp==0){
+        if(iFlgOrbitalGeneral==0){ // Orbital
+          if(NProjBF ==0){
+            // SlaterElm_real will be used in CalculateMAll, note that SlaterElm will not change before SR
+            VMCMakeSample_real(comm_child1);
+          }else{
+            VMC_BF_MakeSample_real(comm_child1);
+          }
+        }else{//OrbitalPara, OrbitalGeneral
+          VMCMakeSample_fsz_real(comm_child1);
         }
-      }else{//OrbitalPara, OrbitalGeneral
-        VMCMakeSample_fsz_real(comm_child1);
-      }
-      // only for real TBC
-      StartTimer(69);
+        // only for real TBC
+        StartTimer(69);
 #pragma omp parallel for default(shared) private(tmp_i)
-      for(tmp_i=0;tmp_i<NQPFull*(Nsize*Nsize+1);tmp_i++)     InvM[tmp_i]      = InvM_real[tmp_i]+0.0*I;
-      StopTimer(69);
+        for(tmp_i=0;tmp_i<NQPFull*(Nsize*Nsize+1);tmp_i++)     InvM[tmp_i]      = InvM_real[tmp_i]+0.0*I;
+        StopTimer(69);
+      }else{
+        if(iFlgOrbitalGeneral==0){ // Orbital
+          MakeExactSample(comm_child1);
+        }else{//OrbitalPara, OrbitalGeneral
+          fprintf(stderr, "Error: Exact sampling with fsz is not implemented yet.\n");
+        }
+      }
       // only for real TBC
     }else{// complex
       if(NProjBF ==0) {
@@ -400,7 +408,7 @@ int VMCParaOpt(MPI_Comm comm_parent, MPI_Comm comm_child1, MPI_Comm comm_child2)
       else {
         VMC_BF_MakeSample(comm_child1);
       }
-    } 
+    }
     StopTimer(3);
     StartTimer(4);
 #ifdef _DEBUG_DETAIL

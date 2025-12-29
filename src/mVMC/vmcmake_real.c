@@ -680,4 +680,94 @@ int makeInitialSampleBF_real(int *eleIdx, int *eleCfg, int *eleNum, int *eleProj
   return 0;
 }
 
+void MakeExactSample(MPI_Comm comm) {
+  int mi,mj,ri,rj,t,i,j;
+  int sample;
+  int icount=0,jcount=0;
+  int isample=0;
+  int iel,jel;
+  int NAllCfg = pow(2,Nsite);
+  int NExactSample = pow(2,Nsite2);
+  int EleExactCfg[2*Nsite * NExactSample]; /* the number of samples */
+  int EleExactIdx[2*Ne    * NExactSample]; /* the number of samples */
+  int EleExactNum[2*Nsite * NExactSample]; /* the number of samples */
+
+  double complex logIpOld=0.0; /* logarithm of inner product <phi|L|x> */
+  int TempNumUp[Nsite],TempNumDn[Nsite];
+  double x,w;
+  char filename[20];
+
+  int icfg,jcfg,sampleStart,sampleEnd;
+  int rank,size,tmp;
+
+  int *moto = TmpEleIdx;
+
+  MPI_Comm_size(comm,&size);
+  MPI_Comm_rank(comm,&rank);
+
+  SplitLoop(&sampleStart,&sampleEnd,NExactSample,rank,size);
+  for(icfg=0;icfg<NAllCfg;icfg++){
+     icount = 0;
+     tmp = icfg;
+     for(i=0; i<Nsite; i++){
+        TempNumUp[i] = tmp % 2; 
+        if(TempNumUp[i] == 1){
+           icount += 1;
+        }
+        tmp = tmp / 2;
+     }
+     for(jcfg=0;jcfg<NAllCfg;jcfg++){
+        jcount = 0;
+        tmp = jcfg;
+        for(j=0; j<Nsite; j++){
+           TempNumDn[j] = tmp % 2; 
+           if(TempNumDn[j] == 1){
+              jcount += 1;
+           }
+           tmp = tmp / 2;
+        }
+        if(icount == Ne && jcount == Ne){
+          iel = 0;
+          jel = 0;
+          for(i=0; i<Nsite; i++){
+            EleExactNum[isample*2*Nsite + i] = TempNumUp[i];
+            EleExactCfg[isample*2*Nsite + i] = -1;
+            EleExactNum[isample*2*Nsite + i+Nsite] = TempNumDn[i];
+            EleExactCfg[isample*2*Nsite + i+Nsite] = -1;
+            if(TempNumUp[i]==1){
+              EleExactIdx[isample*2*Ne + iel ] = i;
+              EleExactCfg[isample*2*Nsite + i] = iel;
+              iel ++;
+            }
+            if(TempNumDn[i]==1){
+              EleExactIdx[isample*2*Ne + jel+Ne]    = i;
+              EleExactCfg[isample*2*Nsite + i+Nsite] = jel;
+              jel ++;
+            }
+         }
+         isample +=1;
+       }
+     }
+  }
+ 
+  NVMCSample = NExactSample = isample;
+  SplitLoop(&sampleStart,&sampleEnd,NExactSample,rank,size);
+  for(sample=sampleStart;sample<sampleEnd;sample++) {
+    /* save Electron Configuration */
+    TmpEleIdx = EleExactIdx + sample*2*Ne;
+    TmpEleCfg = EleExactCfg + sample*2*Nsite;
+    TmpEleNum = EleExactNum + sample*2*Nsite;
+    MakeProjCnt(TmpEleProjCnt,TmpEleNum);
+    
+    saveEleConfig(sample,0.0,TmpEleIdx,TmpEleCfg,TmpEleNum,TmpEleProjCnt);
+
+  } /* end of outstep */
+  //exit(EXIT_FAILURE);
+  TmpEleIdx = moto;
+
+
+  return;
+}
+
+
 #endif

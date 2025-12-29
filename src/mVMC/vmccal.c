@@ -99,6 +99,9 @@ void VMCMainCal(MPI_Comm comm) {
   double complex *rbmCnt;
   const int nSizeRBM=NRBM_PhysLayerIdx + Nneuron;
 
+  double x;
+  double w_all=0.0;
+
   int rank,size,int_i;
   MPI_Comm_size(comm,&size);
   MPI_Comm_rank(comm,&rank);
@@ -149,8 +152,13 @@ void VMCMainCal(MPI_Comm comm) {
     printf("  Debug: sample=%d: LogProjVal \n",sample);
 #endif
     /* calculate reweight */
-    //w = exp(2.0*(log(fabs(ip))+x) - logSqPfFullSlater[sample]);
-    w =1.0;
+    if(FlagExactSmp==0){
+      //w = exp(2.0*(log(fabs(ip))+x) - logSqPfFullSlater[sample]);
+      w =1.0;
+    }else{
+      x = LogProjVal(eleProjCnt);
+      w = exp(2.0*(log(fabs(ip))+x));
+    }
 #ifdef _DEBUG_VMCCAL
     printf("  Debug: sample=%d: isfinite \n",sample);
 #endif

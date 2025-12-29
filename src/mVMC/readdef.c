@@ -686,6 +686,7 @@ int ReadDefFileNInt(char *xNameListFile, MPI_Comm comm) {
   NVMCWarmUp = bufInt[IdxVMCWarmUp];
   NVMCInterval = bufInt[IdxVMCInterval];
   NVMCSample = bufInt[IdxVMCSample];
+
   NExUpdatePath = bufInt[IdxExUpdatePath];
   RndSeed = bufInt[IdxRndSeed];
   NSplitSize = bufInt[IdxSplitSize];
@@ -762,6 +763,13 @@ int ReadDefFileNInt(char *xNameListFile, MPI_Comm comm) {
           + 2 * 5 * NDoublonHolon4siteIdx;
   NOptTrans = (FlagOptTrans > 0) ? NQPOptTrans : 0;
 
+  if (NVMCSample < 0) {
+    //if (TwoSz == 0){
+    //  NVMCSample = pow(2,Nsite*2);
+    //}
+    NVMCSample = pow(2,Nsite*2);
+    FlagExactSmp = 1;
+  }
   /* [s] For BackFlow */
   if (NBackFlowIdx > 0) {
     NrangeIdx = 3 * (Nrange - 1) / Nz + 1; //For Nz-conectivity

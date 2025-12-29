@@ -353,6 +353,9 @@ int NThread;
 /***** for DGETRI and DSKPFA in CalculateMAll *****/
 int LapackLWork;
 
+/* flag for Exact Sample */
+int FlagExactSmp=0;
+
 /***** counter for vmcMake *****/
 int Counter[6] = {0,0,0,0,0,0};
 int Counter_max = 6;
